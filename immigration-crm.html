@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Immigration Firm CRM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .tab-active {
+            border-bottom: 3px solid #3b82f6;
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <div class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 py-4">
+                <h1 class="text-2xl font-bold text-gray-900">Immigration Firm CRM</h1>
+                <p class="text-sm text-gray-600">Case Management & Workflow Tracking</p>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="max-w-7xl mx-auto px-4 mt-4">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8">
+                    <button onclick="switchTab('clients')" id="tab-clients" class="tab-active py-4 px-1 font-medium text-sm">
+                        Clients
+                    </button>
+                    <button onclick="switchTab('cases')" id="tab-cases" class="py-4 px-1 font-medium text-sm text-gray-500 hover:text-gray-700">
+                        Cases
+                    </button>
+                    <button onclick="switchTab('tasks')" id="tab-tasks" class="py-4 px-1 font-medium text-sm text-gray-500 hover:text-gray-700">
+                        Tasks
+                    </button>
+                    <button onclick="switchTab('documents')" id="tab-documents" class="py-4 px-1 font-medium text-sm text-gray-500 hover:text-gray-700">
+                        Documents
+                    </button>
+                    <button onclick="switchTab('interactions')" id="tab-interactions" class="py-4 px-1 font-medium text-sm text-gray-500 hover:text-gray-700">
+                        Interactions
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 py-6">
+            <!-- Clients View -->
+            <div id="clients-view" class="tab-content">
+                <div class="mb-6 flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">Clients</h2>
+                    <button onclick="showAddClientModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        + Add Client
+                    </button>
+                </div>
+                <div id="clients-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- Cases View -->
+            <div id="cases-view" class="tab-content hidden">
+                <div class="mb-6 flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">Immigration Cases</h2>
+                    <button onclick="showAddCaseModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        + New Case
+                    </button>
+                </div>
+                <div id="cases-pipeline" class="grid grid-cols-1 md:grid-cols-5 gap-4"></div>
+            </div>
+
+            <!-- Tasks View -->
+            <div id="tasks-view" class="tab-content hidden">
+                <div class="mb-6 flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">Tasks & Action Items</h2>
+                    <button onclick="showAddTaskModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        + Add Task
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <h3 class="font-semibold text-gray-900 mb-3">To Do</h3>
+                        <div id="tasks-todo" class="space-y-3"></div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900 mb-3">In Progress</h3>
+                        <div id="tasks-inprogress" class="space-y-3"></div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900 mb-3">Completed</h3>
+                        <div id="tasks-completed" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documents View -->
+            <div id="documents-view" class="tab-content hidden">
+                <div class="mb-6 flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">Document Requirements</h2>
+                    <button onclick="showAddDocumentModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        + Add Document
+                    </button>
+                </div>
+                <div id="documents-list" class="space-y-4"></div>
+            </div>
+
+            <!-- Interactions View -->
+            <div id="interactions-view" class="tab-content hidden">
+                <div class="mb-6 flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">Client Interactions</h2>
+                    <button onclick="showAddInteractionModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        + Log Interaction
+                    </button>
+                </div>
+                <div id="interactions-list" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- Modal Container -->
+        <div id="modal-container"></div>
+    </div>
+
+    <script>
+        // Data Storage
+        let clients = [];
+        let cases = [];
+        let tasks = [];
+        let documents = [];
+        let interactions = [];
+
+        // Case types specific to immigration
+        const caseTypes = [
+            'Family-Based Immigration',
+            'Employment-Based Immigration',
+            'Citizenship/Naturalization',
+            'Green Card Renewal',
+            'Asylum',
+            'DACA',
+            'Visa Application',
+            'Deportation Defense',
+            'Other'
+        ];
+
+        // Common document types for immigration
+        const documentTypes = [
+            'Passport',
+            'Birth Certificate',
+            'Marriage Certificate',
+            'Police Clearance',
+            'Medical Exam Results',
+            'Employment Letter',
+            'Tax Returns',
+            'Bank Statements',
+            'Proof of Relationship',
+            'Educational Certificates',
+            'I-94 Form',
+            'Previous Visas',
+            'Photos',
+            'Affidavit of Support',
+            'Other'
+        ];
+
+        // Initialize
+        function init() {
+            loadData();
+            renderClients();
+            renderCases();
+            renderTasks();
+            renderDocuments();
+            renderInteractions();
+        }
+
+        // Load data from localStorage
+        function loadData() {
+            clients = JSON.parse(localStorage.getItem('immigration_clients') || '[]');
+            cases = JSON.parse(localStorage.getItem('immigration_cases') || '[]');
+            tasks = JSON.parse(localStorage.getItem('immigration_tasks') || '[]');
+            documents = JSON.parse(localStorage.getItem('immigration_documents') || '[]');
+            interactions = JSON.parse(localStorage.getItem('immigration_interactions') || '[]');
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('immigration_clients', JSON.stringify(clients));
+            localStorage.setItem('immigration_cases', JSON.stringify(cases));
+            localStorage.setItem('immigration_tasks', JSON.stringify(tasks));
+            localStorage.setItem('immigration_documents', JSON.stringify(documents));
+            localStorage.setItem('immigration_interactions', JSON.stringify(interactions));
+        }
+
+        // Tab Switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('nav button').forEach(el => {
+                el.classList.remove('tab-active', 'text-blue-600');
+                el.classList.add('text-gray-500');
+            });
+            
+            document.getElementById(`${tab}-view`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('tab-active', 'text-blue-600');
+            document.getElementById(`tab-${tab}`).classList.remove('text-gray-500');
+        }
+
+        // Render Clients
+        function renderClients() {
+            const container = document.getElementById('clients-list');
+            if (clients.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-gray-500">
+                        No clients yet. Click "Add Client" to get started.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = clients.map(client => {
+                const clientCases = cases.filter(c => c.clientId === client.id);
+                const activeCases = clientCases.filter(c => c.status !== 'Closed');
+                
+                return `
+                <div class="bg-white rounded-lg shadow p-6 hover:shadow-md transition">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold text-lg">
+                                ${client.name.charAt(0)}
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="font-semibold text-gray-900">${client.name}</h3>
+                                <p class="text-sm text-gray-500">${client.nationality || 'Not specified'}</p>
+                            </div>
+                        </div>
+                        <button onclick="deleteClient('${client.id}')" class="text-gray-400 hover:text-red-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex items-center text-gray-600">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            ${client.email}
+                        </div>
+                        <div class="flex items-center text-gray-600">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
+                            ${client.phone}
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-600">${activeCases.length} Active Case${activeCases.length !== 1 ? 's' : ''}</span>
+                            <button onclick="viewClientDetails('${client.id}')" class="text-blue-600 hover:text-blue-700 font-medium">View Details →</button>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+        }
+
+        // Render Cases
+        function renderCases() {
+            const container = document.getElementById('cases-pipeline');
+            const stages = ['Initial Consultation', 'Documentation', 'Application Filed', 'In Review', 'Closed'];
+            
+            container.innerHTML = stages.map(stage => {
+                const stageCases = cases.filter(c => c.status === stage);
+                
+                return `
+                    <div class="bg-gray-100 rounded-lg p-4">
+                        <div class="mb-4">
+                            <h3 class="font-semibold text-gray-900">${stage}</h3>
+                            <p class="text-sm text-gray-500">${stageCases.length} case${stageCases.length !== 1 ? 's' : ''}</p>
+                        </div>
+                        <div class="space-y-3">
+                            ${stageCases.map(caseItem => `
+                                <div class="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition cursor-pointer" onclick="viewCaseDetails('${caseItem.id}')">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h4 class="font-medium text-gray-900">${caseItem.caseType}</h4>
+                                        <button onclick="event.stopPropagation(); deleteCase('${caseItem.id}')" class="text-gray-400 hover:text-red-600">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-2">${getClientName(caseItem.clientId)}</p>
+                                    <div class="flex justify-between items-center text-xs">
+                                        <span class="text-gray-500">Case #${caseItem.caseNumber}</span>
+                                        ${caseItem.deadline ? `<span class="text-orange-600 font-medium">Due: ${new Date(caseItem.deadline).toLocaleDateString()}</span>` : ''}
+                                    </div>
+                                </div>
+                            `).join('') || '<p class="text-sm text-gray-500 text-center py-4">No cases</p>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render Tasks
+        function renderTasks() {
+            const statuses = ['To Do', 'In Progress', 'Completed'];
+            statuses.forEach(status => {
+                const container = document.getElementById(`tasks-${status.toLowerCase().replace(' ', '')}`);
+                const statusTasks = tasks.filter(t => t.status === status).sort((a, b) => {
+                    if (!a.dueDate) return 1;
+                    if (!b.dueDate) return -1;
+                    return new Date(a.dueDate) - new Date(b.dueDate);
+                });
+                
+                if (statusTasks.length === 0) {
+                    container.innerHTML = '<p class="text-sm text-gray-400 text-center py-4">No tasks</p>';
+                    return;
+                }
+                
+                container.innerHTML = statusTasks.map(task => {
+                    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'Completed';
+                    const caseInfo = cases.find(c => c.id === task.caseId);
+                    
+                    return `
+                        <div class="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition">
+                            <div class="flex items-start justify-between mb-2">
+                                <h4 class="font-medium text-gray-900 text-sm">${task.title}</h4>
+                                <button onclick="deleteTask('${task.id}')" class="text-gray-400 hover:text-red-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-600 mb-2">${task.description || 'No description'}</p>
+                            ${caseInfo ? `<p class="text-xs text-blue-600 mb-2">${getClientName(caseInfo.clientId)} - ${caseInfo.caseType}</p>` : ''}
+                            <div class="flex items-center justify-between">
+                                ${task.dueDate ? `<span class="text-xs ${isOverdue ? 'text-red-600 font-semibold' : 'text-gray-500'}">Due: ${new Date(task.dueDate).toLocaleDateString()}</span>` : '<span class="text-xs text-gray-400">No deadline</span>'}
+                                ${task.status !== 'Completed' ? `
+                                <select onchange="updateTaskStatus('${task.id}', this.value)" class="text-xs border border-gray-300 rounded px-2 py-1">
+                                    <option value="To Do" ${task.status === 'To Do' ? 'selected' : ''}>To Do</option>
+                                    <option value="In Progress" ${task.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                    <option value="Completed">Complete</option>
+                                </select>
+                                ` : '<span class="text-xs text-green-600 font-medium">✓ Done</span>'}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            });
+        }
+
+        // Render Documents
+        function renderDocuments() {
+            const container = document.getElementById('documents-list');
+            
+            // Group documents by case
+            const documentsByCase = {};
+            documents.forEach(doc => {
+                if (!documentsByCase[doc.caseId]) {
+                    documentsByCase[doc.caseId] = [];
+                }
+                documentsByCase[doc.caseId].push(doc);
+            });
+            
+            if (Object.keys(documentsByCase).length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        No documents tracked yet.
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = Object.entries(documentsByCase).map(([caseId, docs]) => {
+                const caseInfo = cases.find(c => c.id === caseId);
+                if (!caseInfo) return '';
+                
+                const pending = docs.filter(d => d.status === 'Pending').length;
+                const received = docs.filter(d => d.status === 'Received').length;
+                
+                return `
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="font-semibold text-gray-900">${getClientName(caseInfo.clientId)}</h3>
+                                <p class="text-sm text-gray-500">${caseInfo.caseType} - Case #${caseInfo.caseNumber}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-600">${received}/${docs.length} Documents Received</p>
+                                ${pending > 0 ? `<p class="text-xs text-orange-600 font-medium">${pending} Pending</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            ${docs.map(doc => `
+                                <div class="flex items-center justify-between py-2 px-3 rounded ${doc.status === 'Received' ? 'bg-green-50' : 'bg-orange-50'}">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" ${doc.status === 'Received' ? 'checked' : ''} onchange="toggleDocumentStatus('${doc.id}')" class="mr-3 h-4 w-4 text-blue-600 rounded">
+                                        <span class="text-sm ${doc.status === 'Received' ? 'text-gray-900' : 'text-gray-700'}">${doc.documentType}</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs px-2 py-1 rounded ${doc.status === 'Received' ? 'bg-green-200 text-green-800' : 'bg-orange-200 text-orange-800'}">${doc.status}</span>
+                                        <button onclick="deleteDocument('${doc.id}')" class="text-gray-400 hover:text-red-600">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render Interactions
+        function renderInteractions() {
+            const container = document.getElementById('interactions-list');
+            if (interactions.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        No interactions logged yet.
+                    </div>
+                `;
+                return;
+            }
+
+            const sorted = [...interactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            container.innerHTML = sorted.map(interaction => `
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium ${getInteractionTypeColor(interaction.type)}">${interaction.type}</span>
+                            <span class="ml-4 text-sm text-gray-500">${new Date(interaction.date).toLocaleString()}</span>
+                        </div>
+                        <button onclick="deleteInteraction('${interaction.id}')" class="text-gray-400 hover:text-red-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 mb-2">${getClientName(interaction.clientId)}</h3>
+                    <p class="text-gray-700">${interaction.notes}</p>
+                </div>
+            `).join('');
+        }
+
+        // Helper Functions
+        function getClientName(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            return client ? client.name : 'Unknown Client';
+        }
+
+        function getInteractionTypeColor(type) {
+            const colors = {
+                'Email': 'bg-blue-100 text-blue-800',
+                'Phone Call': 'bg-green-100 text-green-800',
+                'In-Person Meeting': 'bg-purple-100 text-purple-800',
+                'Video Call': 'bg-indigo-100 text-indigo-800',
+                'Note': 'bg-gray-100 text-gray-800'
+            };
+            return colors[type] || 'bg-gray-100 text-gray-800';
+        }
+
+        function generateCaseNumber() {
+            const year = new Date().getFullYear();
+            const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            return `IMM-${year}-${random}`;
+        }
+
+        // Modal Functions
+        function showAddClientModal() {
+            const modal = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <h3 class="text-xl font-semibold mb-4">Add New Client</h3>
+                        <form onsubmit="addClient(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                                <input type="text" name="name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                                <input type="email" name="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
+                                <input type="tel" name="phone" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
+                                <input type="text" name="nationality" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                                <textarea name="address" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            <div class="flex justify-end space-x-3 mt-6">
+                                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add Client</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-container').innerHTML = modal;
+        }
+
+        function showAddCaseModal() {
+            const clientOptions = clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            const caseTypeOptions = caseTypes.map(t => `<option value="${t}">${t}</option>`).join('');
+            
+            const modal = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <h3 class="text-xl font-semibold mb-4">Create New Case</h3>
+                        <form onsubmit="addCase(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Client *</label>
+                                <select name="clientId" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select a client</option>
+                                    ${clientOptions}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Case Type *</label>
+                                <select name="caseType" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    ${caseTypeOptions}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option>Initial Consultation</option>
+                                    <option>Documentation</option>
+                                    <option>Application Filed</option>
+                                    <option>In Review</option>
+                                    <option>Closed</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+                                <input type="date" name="deadline" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                <textarea name="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            <div class="flex justify-end space-x-3 mt-6">
+                                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Create Case</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-container').innerHTML = modal;
+        }
+
+        function showAddTaskModal() {
+            const caseOptions = cases.map(c => {
+                const client = clients.find(cl => cl.id === c.clientId);
+                return `<option value="${c.id}">${client ? client.name : 'Unknown'} - ${c.caseType}</option>`;
+            }).join('');
+            
+            const modal = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <h3 class="text-xl font-semibold mb-4">Add New Task</h3>
+                        <form onsubmit="addTask(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Task Title *</label>
+                                <input type="text" name="title" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea name="description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Related Case</label>
+                                <select name="caseId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">No case association</option>
+                                    ${caseOptions}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                                <input type="date" name="dueDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                                <select name="priority" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option>Low</option>
+                                    <option>Medium</option>
+                                    <option>High</option>
+                                    <option>Urgent</option>
+                                </select>
+                            </div>
+                            <div class="flex justify-end space-x-3 mt-6">
+                                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add Task</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-container').innerHTML = modal;
+        }
+
+        function showAddDocumentModal() {
+            const caseOptions = cases.map(c => {
+                const client = clients.find(cl => cl.id === c.clientId);
+                return `<option value="${c.id}">${client ? client.name : 'Unknown'} - ${c.caseType}</option>`;
+            }).join('');
+            
+            const documentTypeOptions = documentTypes.map(t => `<option value="${t}">${t}</option>`).join('');
+            
+            const modal = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <h3 class="text-xl font-semibold mb-4">Add Document Requirement</h3>
+                        <form onsubmit="addDocument(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Case *</label>
+                                <select name="caseId" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select a case</option>
+                                    ${caseOptions}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Document Type *</label>
+                                <select name="documentType" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    ${documentTypeOptions}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option>Pending</option>
+                                    <option>Received</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                <textarea name="notes" rows="2" placeholder="Special instructions or requirements..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            <div class="flex justify-end space-x-3 mt-6">
+                                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Add Document</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-container').innerHTML = modal;
+        }
+
+        function showAddInteractionModal() {
+            const clientOptions = clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            
+            const modal = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <h3 class="text-xl font-semibold mb-4">Log Interaction</h3>
+                        <form onsubmit="addInteraction(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Client *</label>
+                                <select name="clientId" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Select a client</option>
+                                    ${clientOptions}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Interaction Type *</label>
+                                <select name="type" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option>Email</option>
+                                    <option>Phone Call</option>
+                                    <option>In-Person Meeting</option>
+                                    <option>Video Call</option>
+                                    <option>Note</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Notes *</label>
+                                <textarea name="notes" required rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                            </div>
+                            <div class="flex justify-end space-x-3 mt-6">
+                                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Log Interaction</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-container').innerHTML = modal;
+        }
+
+        function viewClientDetails(clientId) {
+            const client = clients.find(c => c.id === clientId);
+            if (!client) return;
+            
+            const clientCases = cases.filter(c => c.clientId === clientId);
+            const clientTasks = tasks.filter(t => {
+                const taskCase = cases.find(c => c.id === t.caseId);
+                return taskCase && taskCase.clientId === clientId;
+            });
+            const clientDocs = documents.filter(d => {
+                const docCase = cases.find(c => c.id === d.caseId);
+                return docCase && docCase.clientId === clientId;
+            });
+            
+            const modal = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <h3 class="text-2xl font-semibold mb-4">${client.name}</h3>
+                        
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <div>
+                                <p class="text-sm text-gray-500">Email</p>
+                                <p class="font-medium">${client.email}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Phone</p>
+                                <p class="font-medium">${client.phone}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Nationality</p>
+                                <p class="font-medium">${client.nationality || 'Not specified'}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500">Member Since</p>
+                                <p class="font-medium">${new Date(client.created).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-semibold text-gray-900 mb-3">Cases (${clientCases.length})</h4>
+                            <div class="space-y-2">
+                                ${clientCases.map(c => `
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                                        <div>
+                                            <p class="font-medium text-sm">${c.caseType}</p>
+                                            <p class="text-xs text-gray-500">Case #${c.caseNumber}</p>
+                                        </div>
+                                        <span class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800">${c.status}</span>
+                                    </div>
+                                `).join('') || '<p class="text-sm text-gray-500">No cases</p>'}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-semibold text-gray-900 mb-3">Active Tasks (${clientTasks.filter(t => t.status !== 'Completed').length})</h4>
+                            <div class="space-y-2">
+                                ${clientTasks.filter(t => t.status !== 'Completed').map(t => `
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                                        <p class="text-sm">${t.title}</p>
+                                        <span class="text-xs px-2 py-1 rounded bg-orange-100 text-orange-800">${t.status}</span>
+                                    </div>
+                                `).join('') || '<p class="text-sm text-gray-500">No active tasks</p>'}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <h4 class="font-semibold text-gray-900 mb-3">Document Status</h4>
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center">
+                                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                    <span class="text-sm">${clientDocs.filter(d => d.status === 'Received').length} Received</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="w-3 h-3 bg-orange-500 rounded-full mr-2"></span>
+                                    <span class="text-sm">${clientDocs.filter(d => d.status === 'Pending').length} Pending</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-end">
+                            <button onclick="closeModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-container').innerHTML = modal;
+        }
+
+        function viewCaseDetails(caseId) {
+            const caseItem = cases.find(c => c.id === caseId);
+            if (!caseItem) return;
+            
+            const stages = ['Initial Consultation', 'Documentation', 'Application Filed', 'In Review', 'Closed'];
+            const stageOptions = stages.map(s => `<option ${s === caseItem.status ? 'selected' : ''}>${s}</option>`).join('');
+            
+            const modal = `
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        <h3 class="text-xl font-semibold mb-4">Update Case Status</h3>
+                        <form onsubmit="updateCaseStatus(event, '${caseId}')" class="space-y-4">
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Client</p>
+                                <p class="font-medium mb-3">${getClientName(caseItem.clientId)}</p>
+                                
+                                <p class="text-sm text-gray-500 mb-1">Case Type</p>
+                                <p class="font-medium mb-3">${caseItem.caseType}</p>
+                                
+                                <p class="text-sm text-gray-500 mb-1">Case Number</p>
+                                <p class="font-medium mb-3">${caseItem.caseNumber}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    ${stageOptions}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Deadline</label>
+                                <input type="date" name="deadline" value="${caseItem.deadline || ''}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            <div class="flex justify-end space-x-3 mt-6">
+                                <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Cancel</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-container').innerHTML = modal;
+        }
+
+        function closeModal() {
+            document.getElementById('modal-container').innerHTML = '';
+        }
+
+        // CRUD Operations
+        function addClient(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const client = {
+                id: Date.now().toString(),
+                name: formData.get('name'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                nationality: formData.get('nationality'),
+                address: formData.get('address'),
+                created: new Date().toISOString()
+            };
+            clients.push(client);
+            saveData();
+            renderClients();
+            closeModal();
+        }
+
+        function deleteClient(id) {
+            if (confirm('Are you sure you want to delete this client? All associated cases, tasks, and documents will also be deleted.')) {
+                clients = clients.filter(c => c.id !== id);
+                cases = cases.filter(c => c.clientId !== id);
+                // Clean up orphaned tasks and documents
+                const caseIds = cases.map(c => c.id);
+                tasks = tasks.filter(t => !t.caseId || caseIds.includes(t.caseId));
+                documents = documents.filter(d => caseIds.includes(d.caseId));
+                interactions = interactions.filter(i => i.clientId !== id);
+                saveData();
+                renderClients();
+                renderCases();
+                renderTasks();
+                renderDocuments();
+                renderInteractions();
+            }
+        }
+
+        function addCase(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const caseItem = {
+                id: Date.now().toString(),
+                clientId: formData.get('clientId'),
+                caseType: formData.get('caseType'),
+                caseNumber: generateCaseNumber(),
+                status: formData.get('status'),
+                deadline: formData.get('deadline'),
+                notes: formData.get('notes'),
+                created: new Date().toISOString()
+            };
+            cases.push(caseItem);
+            saveData();
+            renderCases();
+            closeModal();
+        }
+
+        function deleteCase(id) {
+            if (confirm('Are you sure you want to delete this case? All associated tasks and documents will also be deleted.')) {
+                cases = cases.filter(c => c.id !== id);
+                tasks = tasks.filter(t => t.caseId !== id);
+                documents = documents.filter(d => d.caseId !== id);
+                saveData();
+                renderCases();
+                renderTasks();
+                renderDocuments();
+            }
+        }
+
+        function updateCaseStatus(event, id) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const caseItem = cases.find(c => c.id === id);
+            if (caseItem) {
+                caseItem.status = formData.get('status');
+                caseItem.deadline = formData.get('deadline');
+                saveData();
+                renderCases();
+                closeModal();
+            }
+        }
+
+        function addTask(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const task = {
+                id: Date.now().toString(),
+                title: formData.get('title'),
+                description: formData.get('description'),
+                caseId: formData.get('caseId') || null,
+                dueDate: formData.get('dueDate'),
+                priority: formData.get('priority'),
+                status: 'To Do',
+                created: new Date().toISOString()
+            };
+            tasks.push(task);
+            saveData();
+            renderTasks();
+            closeModal();
+        }
+
+        function deleteTask(id) {
+            tasks = tasks.filter(t => t.id !== id);
+            saveData();
+            renderTasks();
+        }
+
+        function updateTaskStatus(id, status) {
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                task.status = status;
+                saveData();
+                renderTasks();
+            }
+        }
+
+        function addDocument(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const document = {
+                id: Date.now().toString(),
+                caseId: formData.get('caseId'),
+                documentType: formData.get('documentType'),
+                status: formData.get('status'),
+                notes: formData.get('notes'),
+                created: new Date().toISOString()
+            };
+            documents.push(document);
+            saveData();
+            renderDocuments();
+            closeModal();
+        }
+
+        function deleteDocument(id) {
+            if (confirm('Are you sure you want to delete this document requirement?')) {
+                documents = documents.filter(d => d.id !== id);
+                saveData();
+                renderDocuments();
+            }
+        }
+
+        function toggleDocumentStatus(id) {
+            const doc = documents.find(d => d.id === id);
+            if (doc) {
+                doc.status = doc.status === 'Pending' ? 'Received' : 'Pending';
+                saveData();
+                renderDocuments();
+            }
+        }
+
+        function addInteraction(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const interaction = {
+                id: Date.now().toString(),
+                clientId: formData.get('clientId'),
+                type: formData.get('type'),
+                notes: formData.get('notes'),
+                date: new Date().toISOString()
+            };
+            interactions.push(interaction);
+            saveData();
+            renderInteractions();
+            closeModal();
+        }
+
+        function deleteInteraction(id) {
+            if (confirm('Are you sure you want to delete this interaction?')) {
+                interactions = interactions.filter(i => i.id !== id);
+                saveData();
+                renderInteractions();
+            }
+        }
+
+        // Initialize app
+        init();
+    </script>
+</body>
+</html>
